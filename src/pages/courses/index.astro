@@ -1,0 +1,105 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import CourseCard from '../../components/CourseCard.astro';
+import { getCollection } from 'astro:content';
+
+const allCourses = await getCollection('courses');
+// Sort by order
+allCourses.sort((a, b) => a.data.order - b.data.order);
+
+// Unique levels for tabs
+const levelsMap: Record<string, string> = {
+  primary: 'الابتدائي',
+  middle: 'المتوسط',
+  secondary: 'الثانوي',
+  university: 'الجامعي',
+  other: 'أخرى'
+};
+
+const levels = [...new Set(allCourses.map(c => c.data.level))];
+---
+
+<Layout title="الدورات">
+  <div class="relative py-24 overflow-hidden">
+    <!-- Decorative background elements -->
+    <div class="absolute -top-40 -right-40 w-96 h-96 bg-purple-400/20 dark:bg-purple-600/10 rounded-full blur-3xl pointer-events-none"></div>
+    <div class="absolute top-40 -left-40 w-96 h-96 bg-indigo-400/20 dark:bg-indigo-600/10 rounded-full blur-3xl pointer-events-none"></div>
+
+    <div class="container mx-auto px-4 relative z-10">
+      <div class="max-w-3xl mx-auto text-center mb-16">
+        <h1 class="text-4xl md:text-5xl font-black mb-6 bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-indigo-600 dark:from-purple-400 dark:to-indigo-400">
+          استكشف دوراتنا المتميزة
+        </h1>
+        <p class="text-lg text-slate-600 dark:text-slate-300 leading-relaxed">
+          اختر من بين مجموعة واسعة من الدورات المصممة خصيصاً لمساعدتك على التفوق والنجاح في مسيرتك التعليمية.
+        </p>
+      </div>
+
+      <!-- Filters (Client-side logic using vanilla JS) -->
+      <div class="flex flex-wrap justify-center gap-3 mb-12" id="course-filters">
+        <button class="filter-btn active px-6 py-2 rounded-full font-semibold text-sm transition-all duration-300 bg-purple-600 text-white shadow-lg shadow-purple-500/30" data-level="all">
+          الكل
+        </button>
+        {levels.map(level => (
+          <button class="filter-btn px-6 py-2 rounded-full font-semibold text-sm transition-all duration-300 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 shadow-sm border border-slate-200 dark:border-slate-700" data-level={level}>
+            {levelsMap[level] || level}
+          </button>
+        ))}
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8" id="courses-grid">
+        {allCourses.map(course => (
+          <div class="course-item transition-all duration-300" data-level={course.data.level}>
+            <CourseCard course={course} />
+          </div>
+        ))}
+      </div>
+
+      {allCourses.length === 0 && (
+        <div class="text-center py-20">
+          <p class="text-slate-500 dark:text-slate-400 text-lg">لا توجد دورات متاحة حالياً.</p>
+        </div>
+      )}
+    </div>
+  </div>
+</Layout>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const filterBtns = document.querySelectorAll('.filter-btn');
+    const courseItems = document.querySelectorAll('.course-item');
+
+    filterBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        // Update active class
+        filterBtns.forEach(b => {
+          b.classList.remove('bg-purple-600', 'text-white', 'shadow-lg', 'shadow-purple-500/30');
+          b.classList.add('bg-white', 'dark:bg-slate-800', 'text-slate-700', 'dark:text-slate-300');
+        });
+        
+        btn.classList.remove('bg-white', 'dark:bg-slate-800', 'text-slate-700', 'dark:text-slate-300');
+        btn.classList.add('bg-purple-600', 'text-white', 'shadow-lg', 'shadow-purple-500/30');
+
+        const level = btn.getAttribute('data-level');
+
+        courseItems.forEach(item => {
+          if (level === 'all' || item.getAttribute('data-level') === level) {
+            item.style.display = 'block';
+            // Use setTimeout to ensure display: block is applied before opacity transition
+            setTimeout(() => {
+              item.style.opacity = '1';
+              item.style.transform = 'scale(1)';
+            }, 10);
+          } else {
+            item.style.opacity = '0';
+            item.style.transform = 'scale(0.95)';
+            // Wait for transition to finish before hiding
+            setTimeout(() => {
+              item.style.display = 'none';
+            }, 300);
+          }
+        });
+      });
+    });
+  });
+</script>

@@ -1,0 +1,58 @@
+---
+import { type CollectionEntry } from 'astro:content';
+
+interface Props {
+  course: CollectionEntry<'courses'>;
+}
+
+const { course } = Astro.props;
+const { title, instructor, rating, image, level, tag } = course.data;
+
+const getLevelColor = (level: string) => {
+  const colors: Record<string, string> = {
+    primary: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300',
+    middle: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
+    secondary: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300',
+    university: 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300',
+    other: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300',
+  };
+  return colors[level] || colors.other;
+};
+---
+
+<a href={`/courses/${course.id}`} class="group relative flex flex-col rounded-3xl shadow-xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border border-slate-200/50 dark:border-slate-800/50 overflow-hidden transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl hover:shadow-purple-500/10">
+  <div class="relative h-48 overflow-hidden">
+    <img src={image} alt={title} class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+    <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+    <div class="absolute top-4 right-4">
+      <span class={`px-3 py-1 text-xs font-bold rounded-full backdrop-blur-md ${getLevelColor(level)}`}>
+        {tag}
+      </span>
+    </div>
+  </div>
+  
+  <div class="p-6 flex flex-col flex-1">
+    <div class="flex justify-between items-start mb-4">
+      <h3 class="text-xl font-bold text-slate-900 dark:text-white line-clamp-2">
+        {title}
+      </h3>
+      <div class="flex items-center gap-1 bg-amber-100/50 dark:bg-amber-900/20 px-2 py-1 rounded-lg">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-amber-500" viewBox="0 0 20 20" fill="currentColor">
+          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+        </svg>
+        <span class="text-sm font-semibold text-amber-700 dark:text-amber-400">{rating}</span>
+      </div>
+    </div>
+    
+    <div class="mt-auto">
+      <div class="flex items-center gap-3 text-slate-600 dark:text-slate-300">
+        <div class="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-indigo-500 flex items-center justify-center text-white font-bold shadow-md">
+          {instructor.charAt(0)}
+        </div>
+        <span class="font-medium text-sm">{instructor}</span>
+      </div>
+    </div>
+  </div>
+  
+  <div class="absolute inset-0 border-2 border-transparent group-hover:border-purple-500/50 dark:group-hover:border-purple-400/50 rounded-3xl transition-colors duration-300 pointer-events-none"></div>
+</a>

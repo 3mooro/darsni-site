@@ -1,0 +1,108 @@
+---
+import Layout from '../layouts/Layout.astro';
+import aboutData from '../content/pages/about.json';
+---
+
+<Layout title={aboutData.title}>
+  <!-- Hero Section -->
+  <section class="relative py-20 lg:py-32 overflow-hidden">
+    <div class="absolute inset-0 bg-gradient-to-br from-indigo-500/10 via-purple-500/5 to-rose-500/10 -z-10"></div>
+    <div class="container mx-auto px-4 max-w-6xl text-center">
+      <h1 class="text-4xl md:text-6xl font-black mb-6 text-slate-900 dark:text-white leading-tight">
+        <span class="text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-indigo-500">
+          {aboutData.aboutTitle}
+        </span>
+      </h1>
+      <p class="text-lg md:text-xl text-slate-600 dark:text-slate-300 max-w-3xl mx-auto leading-relaxed">
+        {aboutData.aboutDescription}
+      </p>
+    </div>
+  </section>
+
+  <!-- Mission Section -->
+  <section class="py-16">
+    <div class="container mx-auto px-4 max-w-5xl">
+      <div class="bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl border border-white/20 dark:border-slate-800 rounded-3xl p-8 md:p-12 shadow-2xl relative overflow-hidden group hover:-translate-y-1 transition-all duration-500">
+        <div class="absolute top-0 right-0 w-64 h-64 bg-purple-500/10 rounded-full blur-3xl -z-10 group-hover:bg-purple-500/20 transition-all duration-500"></div>
+        <div class="text-center">
+          <h2 class="text-3xl font-bold mb-6 text-slate-900 dark:text-white">
+            {aboutData.missionTitle}
+          </h2>
+          <p class="text-xl text-slate-600 dark:text-slate-300 leading-relaxed max-w-2xl mx-auto">
+            {aboutData.missionDescription}
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Values Section -->
+  <section class="py-16">
+    <div class="container mx-auto px-4 max-w-6xl">
+      <h2 class="text-3xl md:text-4xl font-bold text-center mb-12 text-slate-900 dark:text-white">
+        {aboutData.valuesTitle}
+      </h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {aboutData.values.map((value) => (
+          <div class="group bg-white/80 dark:bg-slate-900/80 backdrop-blur-md p-8 rounded-3xl shadow-lg hover:shadow-xl border border-slate-100/50 dark:border-slate-800/50 transition-all duration-300 hover:-translate-y-2 text-center">
+            <div class="w-16 h-16 mx-auto mb-6 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-2xl flex items-center justify-center text-2xl group-hover:scale-110 transition-transform duration-300">
+              <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+            </div>
+            <h3 class="text-xl font-bold text-slate-900 dark:text-white">{value}</h3>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- Teachers Section -->
+  <section class="py-20">
+    <div class="container mx-auto px-4 max-w-6xl">
+      <h2 class="text-3xl md:text-4xl font-bold text-center mb-12 text-slate-900 dark:text-white">
+        {aboutData.teachersTitle}
+      </h2>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        {aboutData.teachers.map((teacher: {name: string, role: string, image: string}) => (
+          <div class="group relative bg-white/80 dark:bg-slate-900/80 backdrop-blur-md rounded-3xl overflow-hidden shadow-lg border border-slate-100/50 dark:border-slate-800/50 hover:shadow-2xl transition-all duration-300">
+            <div class="aspect-square bg-slate-200 dark:bg-slate-800 relative overflow-hidden">
+              {teacher.image ? (
+                <img src={teacher.image} alt={teacher.name} class="w-full h-full object-cover group-hover:scale-105 transition-all duration-500" />
+              ) : (
+                <div class="w-full h-full flex items-center justify-center text-slate-400 dark:text-slate-500 group-hover:scale-105 transition-all duration-500">
+                  <svg class="w-20 h-20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                </div>
+              )}
+              <div class="absolute inset-0 bg-gradient-to-t from-slate-900/80 to-transparent opacity-60"></div>
+            </div>
+            <div class="absolute bottom-0 left-0 right-0 p-6 text-white transform translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
+              <h3 class="text-2xl font-bold mb-1">{teacher.name}</h3>
+              <p class="text-purple-300 font-medium">{teacher.role}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA Section -->
+  <section class="py-20">
+    <div class="container mx-auto px-4 max-w-4xl text-center">
+      <div class="bg-gradient-to-r from-purple-600 to-indigo-600 rounded-3xl p-10 md:p-16 shadow-2xl relative overflow-hidden group">
+        <div class="absolute inset-0 bg-white opacity-5 mix-blend-overlay group-hover:scale-105 transition-transform duration-700"></div>
+        <h2 class="text-3xl md:text-5xl font-bold text-white mb-6 relative z-10">
+          {aboutData.ctaTitle}
+        </h2>
+        <p class="text-xl text-purple-100 mb-10 relative z-10 max-w-2xl mx-auto">
+          {aboutData.ctaDescription}
+        </p>
+        <a href="/contact" class="inline-block px-8 py-4 bg-white text-purple-600 font-bold rounded-2xl hover:bg-slate-50 hover:scale-105 transition-all duration-300 shadow-lg relative z-10">
+          تواصل معنا الآن
+        </a>
+      </div>
+    </div>
+  </section>
+</Layout>
