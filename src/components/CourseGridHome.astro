@@ -1,10 +1,27 @@
 ---
-import { getCollection } from 'astro:content';
 import CourseCard from './CourseCard.astro';
+import { env } from 'cloudflare:workers';
 
-const allCourses = await getCollection('courses');
-// Show top 6 courses
-const courses = allCourses.sort((a, b) => a.data.order - b.data.order).slice(0, 6);
+let allCourses = [];
+try {
+  const db = env?.DB;
+  if (db) {
+    const { results } = await db.prepare('SELECT * FROM courses ORDER BY display_order ASC, created_at DESC LIMIT 6').all();
+    allCourses = (results || []).map(row => ({
+      id: row.slug || row.id,
+      data: {
+        title: row.title,
+        instructor: row.instructor || 'أكاديمية درسني',
+        rating: row.rating || '5.0',
+        image: row.image || `https://placehold.co/600x400/9333ea/ffffff?text=${encodeURIComponent(row.title)}`,
+        level: row.level || 'other',
+        tag: row.tag || 'جديد'
+      }
+    }));
+  }
+} catch (e) {
+  console.error(e);
+}
 ---
 
 <section class="py-20" dir="rtl">
@@ -27,13 +44,13 @@ const courses = allCourses.sort((a, b) => a.data.order - b.data.order).slice(0, 
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-      {courses.map(course => (
+      {allCourses.map(course => (
         <CourseCard course={course} />
       ))}
     </div>
     
     <div class="mt-12 text-center">
-      <a href="#" class="inline-flex items-center justify-center px-8 py-4 text-lg font-bold text-white bg-gradient-to-r from-purple-600 to-indigo-600 rounded-full hover:from-purple-700 hover:to-indigo-700 shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300 gap-2">
+      <a href="/courses" class="inline-flex items-center justify-center px-8 py-4 text-lg font-bold text-white bg-gradient-to-r from-purple-600 to-indigo-600 rounded-full hover:from-purple-700 hover:to-indigo-700 shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300 gap-2">
         عرض جميع الدورات
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 rotate-180" viewBox="0 0 20 20" fill="currentColor">
           <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />

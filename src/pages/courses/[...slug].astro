@@ -1,17 +1,37 @@
 ---
 import Layout from '../../layouts/Layout.astro';
-import { getCollection } from 'astro:content';
+import { env } from 'cloudflare:workers';
 
-export async function getStaticPaths() {
-  const courses = await getCollection('courses');
-  return courses.map(course => ({
-    params: { slug: course.id },
-    props: { course },
-  }));
+const { slug } = Astro.params;
+let course = null;
+
+try {
+  const db = env?.DB;
+  if (db) {
+    course = await db.prepare('SELECT * FROM courses WHERE slug = ?').bind(slug).first();
+  }
+} catch (e) {
+  console.error(e);
 }
 
-const { course } = Astro.props;
-const { title, instructor, rating, image, level, tag, description, syllabus, packages } = course.data;
+if (!course) {
+  return Astro.redirect('/404');
+}
+
+const title = course.title;
+const instructor = course.instructor || 'أكاديمية درسني';
+const rating = course.rating || '5.0';
+const image = course.image || `https://placehold.co/800x600/9333ea/ffffff?text=${encodeURIComponent(title)}`;
+const level = course.level || 'other';
+const tag = course.tag || 'جديد';
+const description = course.body || '';
+
+let syllabus = [];
+let packages = [];
+try {
+  if (course.syllabus) syllabus = JSON.parse(course.syllabus);
+  if (course.packages) packages = JSON.parse(course.packages);
+} catch(e) {}
 ---
 
 <Layout title={title}>

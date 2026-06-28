@@ -1,22 +1,36 @@
 ---
 import Layout from '../../layouts/Layout.astro';
-import { getCollection, render } from 'astro:content';
+import { env } from 'cloudflare:workers';
 
-export const prerender = true;
+const { slug } = Astro.params;
 
-export async function getStaticPaths() {
-  const posts = await getCollection('blog');
-  return posts.map((post) => ({
-    params: { slug: post.id },
-    props: { post },
-  }));
+let post = null;
+try {
+  const db = env?.DB;
+  if (db) {
+    post = await db.prepare('SELECT * FROM blog WHERE slug = ?').bind(slug).first();
+  }
+} catch (e) {
+  console.error(e);
 }
 
-const { post } = Astro.props;
-const { Content } = await render(post);
+if (!post) {
+  return Astro.redirect('/404');
+}
+
+let tags = [];
+try {
+  tags = post.tags ? JSON.parse(post.tags) : [];
+} catch(e) {}
+
+const title = post.title;
+const author = post.author || 'أكاديمية درسني';
+const pubDate = new Date(post.created_at || Date.now());
+const readingTime = post.readingTime || '5 دقائق';
+const heroImage = post.heroImage;
 ---
 
-<Layout title={`${post.data.title} | المدونة`}>
+<Layout title={`${title} | المدونة`}>
   <article dir="rtl" class="min-h-screen bg-slate-50 dark:bg-slate-900 pb-20 transition-colors duration-300">
     <div class="relative">
       <!-- Background Gradients -->
@@ -24,9 +38,9 @@ const { Content } = await render(post);
       
       <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <header class="text-center pt-24 pb-12">
-          {post.data.tags && post.data.tags.length > 0 && (
+          {tags && tags.length > 0 && (
             <div class="flex justify-center flex-wrap gap-2 mb-8">
-              {post.data.tags.map(tag => (
+              {tags.map(tag => (
                 <span class="px-4 py-1.5 text-sm font-medium bg-rose-100/80 dark:bg-rose-900/30 text-rose-700 dark:text-rose-300 rounded-full border border-rose-200/50 dark:border-rose-800/50 backdrop-blur-sm shadow-sm">
                   {tag}
                 </span>
@@ -35,50 +49,50 @@ const { Content } = await render(post);
           )}
           
           <h1 class="text-4xl md:text-5xl lg:text-6xl font-extrabold text-slate-900 dark:text-white mb-8 leading-tight">
-            {post.data.title}
+            {title}
           </h1>
           
           <div class="flex flex-wrap items-center justify-center gap-6 text-slate-600 dark:text-slate-400 font-medium">
             <div class="flex items-center gap-2">
               <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-purple-500 to-indigo-500 flex items-center justify-center text-white text-lg font-bold shadow-md ring-2 ring-white dark:ring-slate-800">
-                {post.data.author?.charAt(0) || 'K'}
+                {author.charAt(0)}
               </div>
-              <span class="text-lg">{post.data.author || 'KSA Academy'}</span>
+              <span class="text-lg">{author}</span>
             </div>
             
             <div class="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-700"></div>
             
-            <time datetime={post.data.pubDate.toISOString()} class="flex items-center gap-2 text-lg">
+            <time datetime={pubDate.toISOString()} class="flex items-center gap-2 text-lg">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
-              {new Date(post.data.pubDate).toLocaleDateString('ar-SA', {
+              {pubDate.toLocaleDateString('ar-SA', {
                 year: 'numeric',
                 month: 'long',
                 day: 'numeric'
               })}
             </time>
             
-            {post.data.readingTime && (
+            {readingTime && (
               <>
                 <div class="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-700"></div>
                 <div class="flex items-center gap-2 text-lg">
                   <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
-                  {post.data.readingTime}
+                  {readingTime}
                 </div>
               </>
             )}
           </div>
         </header>
 
-        {post.data.heroImage && (
+        {heroImage && (
           <div class="mb-16 relative group">
             <div class="absolute -inset-2 bg-gradient-to-r from-purple-500 via-indigo-500 to-rose-500 rounded-[2rem] blur opacity-20 group-hover:opacity-30 transition duration-500"></div>
             <img 
-              src={post.data.heroImage} 
-              alt={post.data.title} 
+              src={heroImage} 
+              alt={title} 
               class="relative w-full h-auto max-h-[600px] object-cover rounded-3xl shadow-2xl ring-1 ring-slate-900/5 dark:ring-white/10" 
             />
           </div>
@@ -93,8 +107,7 @@ const { Content } = await render(post);
             prose-blockquote:border-r-4 prose-blockquote:border-l-0 prose-blockquote:border-purple-500 
             prose-blockquote:bg-purple-50/50 dark:prose-blockquote:bg-purple-900/20 
             prose-blockquote:px-6 prose-blockquote:py-3 prose-blockquote:rounded-l-xl prose-blockquote:font-medium prose-blockquote:italic
-            marker:text-purple-500">
-            <Content />
+            marker:text-purple-500" set:html={post.body}>
           </div>
         </div>
         

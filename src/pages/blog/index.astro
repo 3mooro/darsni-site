@@ -1,10 +1,27 @@
 ---
 import Layout from '../../layouts/Layout.astro';
-import { getCollection } from 'astro:content';
+import { env } from 'cloudflare:workers';
 
-const posts = (await getCollection('blog')).sort(
-  (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf()
-);
+let posts = [];
+try {
+  const db = env?.DB;
+  if (db) {
+    const { results } = await db.prepare("SELECT * FROM blog ORDER BY created_at DESC").all();
+    posts = (results || []).map(row => ({
+      id: row.slug || row.id,
+      data: {
+        title: row.title,
+        description: row.description || row.title,
+        pubDate: new Date(row.created_at || Date.now()),
+        heroImage: row.heroImage || null,
+        author: row.author || 'أكاديمية درسني',
+        readingTime: row.readingTime || '5 دقائق'
+      }
+    }));
+  }
+} catch (e) {
+  console.error(e);
+}
 ---
 
 <Layout title="المدونة | Blog">
