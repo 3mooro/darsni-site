@@ -12,11 +12,17 @@ export const POST: APIRoute = async ({ request, locals }) => {
       });
     }
 
-    // @ts-ignore
-    const db = locals.runtime?.env?.DB;
+    let db;
+    try {
+      const { env } = await import('cloudflare:workers');
+      db = env?.DB;
+    } catch (e) {
+      console.warn("Could not import cloudflare:workers", e);
+    }
+
     if (!db) {
-      console.error("Database connection missing. locals:", JSON.stringify(locals));
-      return new Response(JSON.stringify({ error: 'لم يتم ربط قاعدة البيانات D1 في إعدادات Cloudflare Pages. يرجى مراجعة الخطوات.' }), { status: 500 });
+      console.error("Database connection missing.");
+      return new Response(JSON.stringify({ error: 'لم يتم العثور على قاعدة البيانات. تأكد من ربط DB في إعدادات Cloudflare.' }), { status: 500 });
     }
 
     await db.prepare('INSERT INTO messages (name, phone, course, message) VALUES (?, ?, ?, ?)')
