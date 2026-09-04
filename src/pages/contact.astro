@@ -131,10 +131,11 @@ import generalData from '../content/settings/general.json';
           if (response.ok) {
             successMsg.classList.remove('hidden');
           } else {
-            alert('حدث خطأ أثناء الإرسال. يرجى المحاولة مرة أخرى.');
+            const errData = await response.json().catch(() => ({}));
+            alert(errData.error || 'حدث خطأ أثناء الإرسال. يرجى المحاولة مرة أخرى.');
           }
-        } catch (err) {
-          alert('حدث خطأ أثناء الإرسال. يرجى المحاولة مرة أخرى.');
+        } catch (err: any) {
+          alert('تعذر الاتصال بالخادم. يرجى المحاولة لاحقاً.');
         }
       });
 

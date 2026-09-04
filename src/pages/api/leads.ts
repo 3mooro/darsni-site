@@ -13,10 +13,10 @@ export const POST: APIRoute = async ({ request, locals }) => {
     }
 
     // @ts-ignore
-    const db = locals.runtime.env.DB;
+    const db = locals.runtime?.env?.DB;
     if (!db) {
-      console.error("Database connection missing");
-      return new Response(JSON.stringify({ error: 'خطأ في الاتصال بقاعدة البيانات' }), { status: 500 });
+      console.error("Database connection missing. locals:", JSON.stringify(locals));
+      return new Response(JSON.stringify({ error: 'لم يتم ربط قاعدة البيانات D1 في إعدادات Cloudflare Pages. يرجى مراجعة الخطوات.' }), { status: 500 });
     }
 
     await db.prepare('INSERT INTO messages (name, phone, course, message) VALUES (?, ?, ?, ?)')
@@ -27,9 +27,9 @@ export const POST: APIRoute = async ({ request, locals }) => {
       status: 200,
       headers: { 'Content-Type': 'application/json' }
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error handling lead:', error);
-    return new Response(JSON.stringify({ error: 'حدث خطأ داخلي' }), {
+    return new Response(JSON.stringify({ error: error.message || 'حدث خطأ داخلي' }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' }
     });
