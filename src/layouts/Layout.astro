@@ -2,12 +2,21 @@
 import '../styles/global.css';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
+import WhatsAppFAB from '../components/WhatsAppFAB.astro';
 
 interface Props {
   title: string;
+  description?: string;
+  image?: string;
+  type?: string;
 }
 
-const { title } = Astro.props;
+const { 
+  title, 
+  description = "أكاديمية درسني - المنصة التعليمية الرائدة للدروس الأونلاين بجميع المراحل التعليمية في المملكة العربية السعودية. نوفر نخبة من أفضل المعلمين وأحدث طرق التدريس.",
+  image = "/og-image.jpg",
+  type = "website"
+} = Astro.props;
 ---
 
 <!DOCTYPE html>
@@ -17,11 +26,32 @@ const { title } = Astro.props;
     <meta name="viewport" content="width=device-width" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="generator" content={Astro.generator} />
+    
+    <!-- Primary Meta Tags -->
     <title>{title} | Darsni</title>
+    <meta name="title" content={`${title} | Darsni`} />
+    <meta name="description" content={description} />
+    <meta name="keywords" content="دروس أونلاين, تعليم عن بعد, رياضيات, فيزياء, كيمياء, إنجليزي, ابتدائي, متوسط, ثانوي, جامعي, أكاديمية درسني, منصة تعليمية سعودية" />
+    <meta name="author" content="أكاديمية درسني" />
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content={type} />
+    <meta property="og:url" content={Astro.url} />
+    <meta property="og:title" content={`${title} | Darsni`} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={new URL(image, Astro.url)} />
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content={Astro.url} />
+    <meta property="twitter:title" content={`${title} | Darsni`} />
+    <meta property="twitter:description" content={description} />
+    <meta property="twitter:image" content={new URL(image, Astro.url)} />
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
-    <script>
+    <script is:inline>
       // Early theme initialization to prevent flash
       if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
         document.documentElement.classList.add('dark');
@@ -37,5 +67,6 @@ const { title } = Astro.props;
       <slot />
     </div>
     <Footer />
+    <WhatsAppFAB />
   </body>
 </html>

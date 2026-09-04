@@ -1,9 +1,9 @@
 ---
 import CourseCard from './CourseCard.astro';
-import { env } from 'cloudflare:workers';
 
 let allCourses = [];
 try {
+  const { env } = await import('cloudflare:workers');
   const db = env?.DB;
   if (db) {
     const { results } = await db.prepare('SELECT * FROM courses ORDER BY display_order ASC, created_at DESC LIMIT 6').all();

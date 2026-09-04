@@ -1,11 +1,12 @@
 ---
 import Layout from '../../layouts/Layout.astro';
-import { env } from 'cloudflare:workers';
+import { marked } from 'marked';
 
 const { slug } = Astro.params;
 
 let post = null;
 try {
+  const { env } = await import('cloudflare:workers');
   const db = env?.DB;
   if (db) {
     post = await db.prepare('SELECT * FROM blog WHERE slug = ?').bind(slug).first();
@@ -22,6 +23,16 @@ let tags = [];
 try {
   tags = post.tags ? JSON.parse(post.tags) : [];
 } catch(e) {}
+
+let relatedPosts = [];
+try {
+  const { env } = await import('cloudflare:workers');
+  const db = env?.DB;
+  if (db) {
+    const { results } = await db.prepare('SELECT * FROM blog WHERE slug != ? ORDER BY RANDOM() LIMIT 3').bind(slug).all();
+    relatedPosts = results || [];
+  }
+} catch (e) {}
 
 const title = post.title;
 const author = post.author || 'أكاديمية درسني';
@@ -40,7 +51,7 @@ const heroImage = post.heroImage;
         <header class="text-center pt-24 pb-12">
           {tags && tags.length > 0 && (
             <div class="flex justify-center flex-wrap gap-2 mb-8">
-              {tags.map(tag => (
+              {tags.map((tag: string) => (
                 <span class="px-4 py-1.5 text-sm font-medium bg-rose-100/80 dark:bg-rose-900/30 text-rose-700 dark:text-rose-300 rounded-full border border-rose-200/50 dark:border-rose-800/50 backdrop-blur-sm shadow-sm">
                   {tag}
                 </span>
@@ -101,7 +112,7 @@ const heroImage = post.heroImage;
         <div class="bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl border border-slate-200/50 dark:border-slate-700/50 rounded-3xl p-8 md:p-12 shadow-xl shadow-purple-500/5">
           <div class="prose prose-lg md:prose-xl prose-slate dark:prose-invert max-w-none 
             prose-headings:font-bold prose-headings:text-slate-900 dark:prose-headings:text-white
-            prose-a:text-purple-600 dark:prose-a:text-purple-400 prose-a:no-underline hover:prose-a:underline
+            prose-a:!text-purple-600 dark:prose-a:!text-purple-400 prose-a:!underline hover:prose-a:text-purple-700
             prose-img:rounded-2xl prose-img:shadow-lg
             prose-strong:text-slate-900 dark:prose-strong:text-white prose-strong:font-bold
             prose-blockquote:border-r-4 prose-blockquote:border-l-0 prose-blockquote:border-purple-500 
@@ -119,7 +130,41 @@ const heroImage = post.heroImage;
             العودة للمدونة
           </a>
         </div>
+
+        {relatedPosts && relatedPosts.length > 0 && (
+          <div class="mt-24 pt-12 border-t border-slate-200/50 dark:border-slate-800/50">
+            <h3 class="text-3xl font-bold text-slate-900 dark:text-white mb-8">مقالات ذات صلة</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {relatedPosts.map((rp: any) => (
+                <a href={`/blog/${rp.slug}`} class="group bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl border border-slate-200/50 dark:border-slate-700/50 rounded-2xl overflow-hidden shadow-sm hover:shadow-xl hover:shadow-purple-500/10 transition-all duration-300 hover:-translate-y-1 flex flex-col h-full">
+                  <div class="h-48 overflow-hidden relative w-full">
+                    <div class="absolute inset-0 bg-gradient-to-t from-slate-900/60 to-transparent z-10"></div>
+                    <img src={rp.heroImage || '/og-image.jpg'} alt={rp.title} class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                  </div>
+                  <div class="p-6 flex-1 flex flex-col justify-between">
+                    <h4 class="font-bold text-lg text-slate-900 dark:text-white group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors line-clamp-2">{rp.title}</h4>
+                    <span class="inline-block mt-4 text-sm text-purple-600 dark:text-purple-400 font-semibold group-hover:underline">اقرأ المزيد &larr;</span>
+                  </div>
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
+
       </div>
     </div>
   </article>
 </Layout>
+
+<style is:global>
+  .prose a {
+    color: #9333ea !important; /* purple-600 */
+    text-decoration: underline !important;
+  }
+  html.dark .prose a {
+    color: #c084fc !important; /* purple-400 */
+  }
+  .prose a:hover {
+    color: #7e22ce !important; /* purple-700 */
+  }
+</style>

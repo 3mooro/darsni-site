@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://darisny.online/sitemap.xml

@@ -1,0 +1,135 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { verifySession } from '../../lib/auth';
+
+const token = Astro.cookies.get('session')?.value;
+if (!token) {
+  return Astro.redirect('/login');
+}
+
+const { env } = await import('cloudflare:workers');
+const payload = await verifySession(token, env);
+if (!payload) {
+  Astro.cookies.delete('session', { path: '/' });
+  return Astro.redirect('/login');
+}
+
+const db = env?.DB;
+let user = null;
+let enrollments = [];
+
+if (db) {
+  try {
+    user = await db.prepare('SELECT * FROM users WHERE id = ?').bind(payload.userId).first();
+    const { results } = await db.prepare(`
+      SELECT e.*, c.title, c.image, c.instructor 
+      FROM enrollments e 
+      JOIN courses c ON e.course_id = c.id 
+      WHERE e.user_id = ?
+    `).bind(payload.userId).all();
+    enrollments = results || [];
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+if (!user) {
+  return Astro.redirect('/logout');
+}
+---
+
+<Layout title="لوحة تحكم الطالب | أكاديمية درسني">
+  <div class="min-h-screen bg-slate-50 dark:bg-slate-900 pt-32 pb-20" dir="rtl">
+    <div class="container mx-auto px-4 max-w-7xl">
+      
+      <!-- Welcome Section -->
+      <div class="bg-white dark:bg-slate-800 rounded-3xl p-8 shadow-xl border border-slate-100 dark:border-slate-700 mb-10 flex flex-col md:flex-row items-center justify-between gap-6">
+        <div class="flex items-center gap-6">
+          <div class="w-20 h-20 bg-gradient-to-tr from-purple-600 to-indigo-600 rounded-2xl flex items-center justify-center text-white text-3xl font-bold shadow-lg shadow-purple-500/30">
+            {user.name.charAt(0)}
+          </div>
+          <div>
+            <h1 class="text-3xl font-black text-slate-900 dark:text-white mb-2">مرحباً، {user.name}</h1>
+            <p class="text-slate-500 dark:text-slate-400 font-medium">{user.email}</p>
+          </div>
+        </div>
+        <a href="/logout" class="px-6 py-3 bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400 font-bold rounded-xl hover:bg-rose-200 dark:hover:bg-rose-900/50 transition-colors">
+          تسجيل الخروج
+        </a>
+      </div>
+
+      <div class="mb-8 flex items-center justify-between">
+        <h2 class="text-2xl font-bold text-slate-900 dark:text-white">دوراتي الدراسية</h2>
+        <a href="/courses" class="text-purple-600 dark:text-purple-400 font-bold hover:underline">تصفح المزيد من الدورات &larr;</a>
+      </div>
+
+      {enrollments.length === 0 ? (
+        <div class="text-center py-20 bg-white dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm">
+          <div class="text-6xl mb-4">🎓</div>
+          <h3 class="text-2xl font-bold text-slate-900 dark:text-white mb-2">لم تقم بالاشتراك في أي دورة بعد</h3>
+          <p class="text-slate-500 dark:text-slate-400 mb-8">ابدأ رحلتك التعليمية الآن واكتشف أفضل الدورات</p>
+          <a href="/courses" class="inline-flex px-8 py-4 bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold rounded-2xl shadow-lg shadow-purple-500/30 hover:-translate-y-1 transition-all">
+            تصفح الدورات
+          </a>
+        </div>
+      ) : (
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {enrollments.map((enrollment) => {
+            const remaining = enrollment.total_sessions - enrollment.completed_sessions;
+            const progress = enrollment.total_sessions > 0 ? (enrollment.completed_sessions / enrollment.total_sessions) * 100 : 0;
+            return (
+              <div class="bg-white dark:bg-slate-800 rounded-3xl overflow-hidden shadow-xl border border-slate-100 dark:border-slate-700 group hover:-translate-y-2 transition-transform duration-300">
+                <div class="h-48 overflow-hidden relative">
+                  <img src={enrollment.image || `https://placehold.co/600x400/9333ea/ffffff?text=${encodeURIComponent(enrollment.title)}`} alt={enrollment.title} class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                  <div class="absolute top-4 right-4">
+                    {enrollment.status === 'pending' ? (
+                      <span class="px-3 py-1 bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-400 rounded-full text-sm font-bold shadow-sm">قيد الانتظار</span>
+                    ) : enrollment.status === 'approved' ? (
+                      <span class="px-3 py-1 bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-400 rounded-full text-sm font-bold shadow-sm">نشط</span>
+                    ) : (
+                      <span class="px-3 py-1 bg-rose-100 text-rose-700 dark:bg-rose-900/50 dark:text-rose-400 rounded-full text-sm font-bold shadow-sm">مرفوض</span>
+                    )}
+                  </div>
+                </div>
+                <div class="p-6">
+                  <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-2">{enrollment.title}</h3>
+                  <p class="text-slate-500 dark:text-slate-400 text-sm mb-6 font-medium">المعلم: {enrollment.instructor}</p>
+                  
+                  {enrollment.status === 'approved' && (
+                    <div class="space-y-4">
+                      <div class="flex justify-between text-sm font-bold text-slate-700 dark:text-slate-300">
+                        <span>التقدم: {Math.round(progress)}%</span>
+                        <span>{enrollment.completed_sessions} / {enrollment.total_sessions} حصة</span>
+                      </div>
+                      <div class="w-full h-3 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                        <div class="h-full bg-gradient-to-r from-purple-500 to-indigo-500 rounded-full relative" style={`width: ${progress}%`}>
+                          <div class="absolute inset-0 bg-white/20 animate-pulse"></div>
+                        </div>
+                      </div>
+                      <div class="pt-4 border-t border-slate-100 dark:border-slate-700 flex justify-between items-center">
+                        <div class="text-center">
+                          <p class="text-xs text-slate-500 dark:text-slate-400 mb-1">الحصص المنجزة</p>
+                          <p class="text-lg font-black text-green-600 dark:text-green-400">{enrollment.completed_sessions}</p>
+                        </div>
+                        <div class="w-px h-8 bg-slate-200 dark:bg-slate-700"></div>
+                        <div class="text-center">
+                          <p class="text-xs text-slate-500 dark:text-slate-400 mb-1">الحصص المتبقية</p>
+                          <p class="text-lg font-black text-purple-600 dark:text-purple-400">{remaining}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  {enrollment.status === 'pending' && (
+                    <div class="text-center py-4 text-amber-600 dark:text-amber-400 font-semibold bg-amber-50 dark:bg-amber-900/20 rounded-xl">
+                      نحن بانتظار تفعيل اشتراكك من قبل الإدارة
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  </div>
+</Layout>

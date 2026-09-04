@@ -1,4 +1,18 @@
 ---
+import { env } from 'cloudflare:workers';
+
+let whatsappNumber = '966500000000';
+try {
+  const db = env?.DB;
+  if (db) {
+    const res = await db.prepare("SELECT whatsapp_number FROM site_settings LIMIT 1").first();
+    if (res && res.whatsapp_number) {
+      whatsappNumber = res.whatsapp_number;
+    }
+  }
+} catch (e) {
+  console.error('Could not fetch whatsapp number from DB:', e);
+}
 ---
 
 <footer class="bg-white dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 pt-16 pb-8 mt-20 relative overflow-hidden">
@@ -56,7 +70,7 @@
         <ul class="flex flex-col gap-4">
           <li class="flex items-center gap-3 text-slate-500 dark:text-slate-400">
             <div class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-indigo-500">📞</div>
-            <span dir="ltr">+966 50 000 0000</span>
+            <span dir="ltr">+{whatsappNumber}</span>
           </li>
           <li class="flex items-center gap-3 text-slate-500 dark:text-slate-400">
             <div class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-indigo-500">✉️</div>
