@@ -19,6 +19,26 @@ if (!post) {
   return Astro.redirect('/404');
 }
 
+// Count one view per visitor per day (same as KSA academy)
+try {
+  const { env } = await import('cloudflare:workers');
+  const db = env?.DB;
+  if (db) {
+    const viewCookieName = `viewed_article_${slug}`;
+    if (!Astro.cookies.has(viewCookieName)) {
+      try {
+        await db.prepare('UPDATE blog SET views = COALESCE(views, 0) + 1 WHERE slug = ?').bind(slug).run();
+      } catch {
+        try { await db.prepare('ALTER TABLE blog ADD COLUMN views INTEGER DEFAULT 0').run(); } catch {}
+        try { await db.prepare('UPDATE blog SET views = COALESCE(views, 0) + 1 WHERE slug = ?').bind(slug).run(); } catch {}
+      }
+      Astro.cookies.set(viewCookieName, 'true', { path: '/', maxAge: 60 * 60 * 24 });
+    }
+  }
+} catch (e) {
+  console.error(e);
+}
+
 let tags = [];
 try {
   tags = post.tags ? JSON.parse(post.tags) : [];
@@ -194,6 +214,23 @@ const whatsappText = encodeURIComponent(`مرحباً أكاديمية درسن�
       </div>
     </div>
   </article>
+
+  <!-- تتبع نقرات الواتساب: تسجيل المقال مصدر النقرة لعرضها في لوحة التحكم -->
+  <script define:vars={{ articleSlug: slug }}>
+    document.addEventListener('click', function (e) {
+      var t = e.target;
+      var a = t && t.closest ? t.closest('a[href*="wa.me"], a[href*="api.whatsapp.com"]') : null;
+      if (!a) return;
+      var payload = JSON.stringify({ slug: articleSlug });
+      try {
+        if (navigator.sendBeacon) {
+          navigator.sendBeacon('/api/track-whatsapp', new Blob([payload], { type: 'application/json' }));
+        } else {
+          fetch('/api/track-whatsapp', { method: 'POST', body: payload, headers: { 'Content-Type': 'application/json' }, keepalive: true });
+        }
+      } catch (err) {}
+    });
+  </script>
 </Layout>
 
 <style is:global>
