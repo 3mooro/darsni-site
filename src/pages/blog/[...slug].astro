@@ -59,6 +59,7 @@ const author = post.author || 'أكاديمية درسني';
 const pubDate = new Date(post.created_at || Date.now());
 const readingTime = post.readingTime || '5 دقائق';
 const heroImage = post.heroImage;
+const seoDescription = (post.description || '').trim() || undefined;
 
 let whatsappNumber = '966500000000';
 try {
@@ -77,7 +78,7 @@ try {
 const whatsappText = encodeURIComponent(`مرحباً أكاديمية درسني، قرأت مقال "${title}" وأرغب في حجز حصة تجريبية / استشارة مع معلم متخصص.`);
 ---
 
-<Layout title={`${title} | المدونة`}>
+<Layout title={`${title} | المدونة`} description={seoDescription}>
   <article dir="rtl" class="min-h-screen bg-slate-50 dark:bg-slate-900 pb-20 transition-colors duration-300">
     <div class="relative">
       <!-- Background Gradients -->
@@ -139,7 +140,7 @@ const whatsappText = encodeURIComponent(`مرحباً أكاديمية درسن�
             <div class="absolute -inset-2 bg-gradient-to-r from-purple-500 via-indigo-500 to-rose-500 rounded-[2rem] blur opacity-20 group-hover:opacity-30 transition duration-500"></div>
             <img 
               src={heroImage} 
-              alt={title} 
+              alt={post.imageAlt || title} 
               class="relative w-full h-auto max-h-[600px] object-cover rounded-3xl shadow-2xl ring-1 ring-slate-900/5 dark:ring-white/10" 
             />
           </div>
